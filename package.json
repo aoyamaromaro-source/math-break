@@ -24,6 +24,7 @@
     "@types/react-dom": "^19",
     "@types/react-katex": "^3.0.4",
     "tailwindcss": "^4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vercel": "^54.14.2"
   }
 }
