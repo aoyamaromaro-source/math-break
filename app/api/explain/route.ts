@@ -1,9 +1,17 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { anthropic, EXPLAIN_SYSTEM } from "@/lib/anthropic";
+import { getAnthropicClient, EXPLAIN_SYSTEM } from "@/lib/anthropic";
 import { ExplainRequest } from "@/types";
 
 export async function POST(request: NextRequest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[Explain] ANTHROPIC_API_KEY is not set");
+    return new Response(
+      "API key not configured. Set ANTHROPIC_API_KEY in Vercel environment variables.",
+      { status: 500 }
+    );
+  }
+
   try {
     const body: ExplainRequest = await request.json();
     const { problemText, solutionText, highlightedText, userQuestion, history } = body;
@@ -27,7 +35,7 @@ ${userQuestion ? `【質問】${userQuestion}` : "この部分を偏差値45〜5
       },
     ];
 
-    const stream = await anthropic.messages.stream({
+    const stream = await getAnthropicClient().messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
       system: EXPLAIN_SYSTEM,

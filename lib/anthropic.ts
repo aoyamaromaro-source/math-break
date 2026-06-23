@@ -1,8 +1,24 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Lazy initialization: client is created on first request, not at module load time.
+// Module-level `new Anthropic()` throws at build/cold-start if the env var is absent,
+// which causes Vercel to report "No outgoing requests" with no useful error.
+let _client: Anthropic | null = null;
+
+export function getAnthropicClient(): Anthropic {
+  if (!_client) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "ANTHROPIC_API_KEY environment variable is not set. " +
+          "Add it to your Vercel project settings under Environment Variables."
+      );
+    }
+    _client = new Anthropic({ apiKey });
+    console.log("[Anthropic] client initialized");
+  }
+  return _client;
+}
 
 export const OCR_SYSTEM = `あなたは数学の問題・解説の画像をテキストに変換する専門家です。
 

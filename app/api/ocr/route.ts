@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { anthropic, OCR_SYSTEM } from "@/lib/anthropic";
+import { getAnthropicClient, OCR_SYSTEM } from "@/lib/anthropic";
 import { convertHeicToJpeg } from "@/lib/heicUtils";
 
 type SupportedMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
@@ -26,6 +26,14 @@ async function normalizeImage(img: ImagePayload): Promise<{ data: string; mediaT
 }
 
 export async function POST(request: NextRequest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[OCR] ANTHROPIC_API_KEY is not set");
+    return NextResponse.json(
+      { error: "API key not configured. Set ANTHROPIC_API_KEY in Vercel environment variables." },
+      { status: 500 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { problemImage, solutionImage, mode } = body;
@@ -61,7 +69,7 @@ export async function POST(request: NextRequest) {
         ? "2枚の画像を送りました。1枚目が問題のページ、2枚目が解説のページです。それぞれの内容を正確にテキストに変換し、必ず【問題】と【解説】のラベルで区別して出力してください。"
         : "画像から数学の問題文をテキストに変換してください。必ず【問題】のラベルをつけて出力してください。";
 
-    const response = await anthropic.messages.create({
+    const response = await getAnthropicClient().messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 2000,
       system: OCR_SYSTEM,
