@@ -40,15 +40,21 @@ function parseSegments(text: string): Segment[] {
 }
 
 function toHtml(latex: string, displayMode: boolean): string {
+  console.log("[MathRenderer] toHtml called:", { latex, displayMode });
   try {
-    return katex.renderToString(latex, { throwOnError: false, displayMode });
-  } catch {
+    const html = katex.renderToString(latex, { throwOnError: false, displayMode });
+    console.log("[MathRenderer] toHtml success, html length:", html.length);
+    return html;
+  } catch (e) {
+    console.error("[MathRenderer] toHtml error:", e);
     return latex;
   }
 }
 
 export default function MathRenderer({ text, className }: MathRendererProps) {
   const segments = parseSegments(text);
+  console.log("[MathRenderer] text:", JSON.stringify(text.slice(0, 120)));
+  console.log("[MathRenderer] segments:", segments);
 
   return (
     <span className={className}>
