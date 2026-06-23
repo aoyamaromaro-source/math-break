@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
 
     const userMessage =
       mode === "problem-and-solution"
-        ? "この画像から数学の問題文と解説をテキストに変換してください。問題文は【問題】、解説は【解説】のラベルをつけて区別してください。"
-        : "この画像から数学の問題文をテキストに変換してください。【問題】のラベルをつけてください。";
+        ? "2枚の画像を送りました。1枚目が問題のページ、2枚目が解説のページです。それぞれの内容を正確にテキストに変換し、必ず【問題】と【解説】のラベルで区別して出力してください。"
+        : "画像から数学の問題文をテキストに変換してください。必ず【問題】のラベルをつけて出力してください。";
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
@@ -80,10 +80,13 @@ export async function POST(request: NextRequest) {
       response.content[0].type === "text" ? response.content[0].text : "";
 
     const problemMatch = text.match(/【問題】([\s\S]*?)(?=【解説】|$)/);
-    const solutionMatch = text.match(/【解説】([\s\S]*?)$/);
+    const solutionMatch = text.match(/【解説】([\s\S]*)/);
 
     const problemText = problemMatch ? problemMatch[1].trim() : text.trim();
     const solutionText = solutionMatch ? solutionMatch[1].trim() : "";
+
+    console.log("[OCR] raw response:", text.slice(0, 200));
+    console.log("[OCR] problemText length:", problemText.length, "solutionText length:", solutionText.length);
 
     return NextResponse.json({ problemText, solutionText });
   } catch (error) {

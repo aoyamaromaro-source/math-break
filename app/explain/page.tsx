@@ -17,6 +17,7 @@ export default function ExplainPage() {
   useEffect(() => {
     const p = sessionStorage.getItem("problemText") ?? "";
     const s = sessionStorage.getItem("solutionText") ?? "";
+    console.log("[explain] loaded from sessionStorage — problemText length:", p.length, "solutionText length:", s.length);
     if (!p) {
       router.push("/");
       return;

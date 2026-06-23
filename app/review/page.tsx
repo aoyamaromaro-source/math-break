@@ -23,6 +23,7 @@ export default function ReviewPage() {
   }, [router]);
 
   const handleConfirm = () => {
+    console.log("[review] saving problemText length:", problemText.length, "solutionText length:", solutionText.length);
     sessionStorage.setItem("problemText", problemText);
     sessionStorage.setItem("solutionText", solutionText);
     router.push("/explain");
