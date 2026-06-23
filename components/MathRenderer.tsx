@@ -1,13 +1,12 @@
 "use client";
 
-import { InlineMath, BlockMath } from "react-katex";
+import katex from "katex";
 
 interface MathRendererProps {
   text: string;
   className?: string;
 }
 
-// Split text into plain / inline-math / block-math segments
 type Segment =
   | { type: "text"; value: string }
   | { type: "inline"; value: string }
@@ -15,7 +14,7 @@ type Segment =
 
 function parseSegments(text: string): Segment[] {
   const segments: Segment[] = [];
-  // Match $$...$$ first (block), then $...$ (inline)
+  // Match $$...$$ (block) before $...$ (inline) to avoid greedy collision
   const pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
   let last = 0;
   let match: RegExpExecArray | null;
@@ -40,6 +39,14 @@ function parseSegments(text: string): Segment[] {
   return segments;
 }
 
+function toHtml(latex: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(latex, { throwOnError: false, displayMode });
+  } catch {
+    return latex;
+  }
+}
+
 export default function MathRenderer({ text, className }: MathRendererProps) {
   const segments = parseSegments(text);
 
@@ -48,16 +55,20 @@ export default function MathRenderer({ text, className }: MathRendererProps) {
       {segments.map((seg, i) => {
         if (seg.type === "block") {
           return (
-            <span key={i} className="my-2 block overflow-x-auto">
-              <BlockMath math={seg.value} />
-            </span>
+            <span
+              key={i}
+              className="my-2 block overflow-x-auto"
+              dangerouslySetInnerHTML={{ __html: toHtml(seg.value, true) }}
+            />
           );
         }
         if (seg.type === "inline") {
           return (
-            <span key={i} className="inline-block align-middle">
-              <InlineMath math={seg.value} />
-            </span>
+            <span
+              key={i}
+              className="inline-block align-middle"
+              dangerouslySetInnerHTML={{ __html: toHtml(seg.value, false) }}
+            />
           );
         }
         // plain text — preserve whitespace/newlines
