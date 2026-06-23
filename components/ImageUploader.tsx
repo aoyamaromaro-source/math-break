@@ -2,16 +2,29 @@
 
 import { useRef, useState, DragEvent, ChangeEvent } from "react";
 
+interface CompressionInfo {
+  originalBytes: number;
+  compressedBytes: number;
+}
+
 interface ImageUploaderProps {
   label: string;
   onImageSelect: (file: File | null) => void;
   file: File | null;
+  compressionInfo?: CompressionInfo;
+}
+
+function formatBytes(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+    : `${Math.round(bytes / 1024)}KB`;
 }
 
 export default function ImageUploader({
   label,
   onImageSelect,
   file,
+  compressionInfo,
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -65,6 +78,13 @@ export default function ImageUploader({
               className="max-h-40 max-w-full rounded-lg object-contain"
             />
             <span className="text-xs text-gray-500">{file!.name}</span>
+            {compressionInfo ? (
+              <span className="text-xs text-blue-600">
+                元サイズ: {formatBytes(compressionInfo.originalBytes)} → 圧縮後: {formatBytes(compressionInfo.compressedBytes)}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-400">圧縮中...</span>
+            )}
             <button
               type="button"
               onClick={(e) => {

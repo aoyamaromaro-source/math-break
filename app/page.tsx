@@ -3,16 +3,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ImageUploader from "@/components/ImageUploader";
-import { encodeImageToBase64, getMediaType } from "@/lib/textUtils";
+import { compressImage, CompressedImage } from "@/lib/textUtils";
 import { AppMode } from "@/types";
 
 export default function Home() {
   const router = useRouter();
   const [mode, setMode] = useState<AppMode>("problem-and-solution");
   const [problemFile, setProblemFile] = useState<File | null>(null);
+  const [problemCompressed, setProblemCompressed] = useState<CompressedImage | null>(null);
   const [solutionFile, setSolutionFile] = useState<File | null>(null);
+  const [solutionCompressed, setSolutionCompressed] = useState<CompressedImage | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleProblemSelect = async (file: File | null) => {
+    setProblemFile(file);
+    setProblemCompressed(null);
+    if (file) setProblemCompressed(await compressImage(file));
+  };
+
+  const handleSolutionSelect = async (file: File | null) => {
+    setSolutionFile(file);
+    setSolutionCompressed(null);
+    if (file) setSolutionCompressed(await compressImage(file));
+  };
 
   const handleStart = async () => {
     if (!problemFile) {
@@ -28,14 +42,16 @@ export default function Home() {
     setError("");
 
     try {
-      const problemData = await encodeImageToBase64(problemFile);
-      const problemMediaType = getMediaType(problemFile);
+      const problem = problemCompressed ?? (await compressImage(problemFile));
+      const problemData = problem.base64;
+      const problemMediaType = problem.mediaType;
 
       let solutionData: string | undefined;
       let solutionMediaType: string | undefined;
       if (mode === "problem-and-solution" && solutionFile) {
-        solutionData = await encodeImageToBase64(solutionFile);
-        solutionMediaType = getMediaType(solutionFile);
+        const solution = solutionCompressed ?? (await compressImage(solutionFile));
+        solutionData = solution.base64;
+        solutionMediaType = solution.mediaType;
       }
 
       const res = await fetch("/api/ocr", {
@@ -110,13 +126,15 @@ export default function Home() {
           <ImageUploader
             label="問題の画像"
             file={problemFile}
-            onImageSelect={setProblemFile}
+            onImageSelect={handleProblemSelect}
+            compressionInfo={problemCompressed ?? undefined}
           />
           {mode === "problem-and-solution" && (
             <ImageUploader
               label="解説の画像"
               file={solutionFile}
-              onImageSelect={setSolutionFile}
+              onImageSelect={handleSolutionSelect}
+              compressionInfo={solutionCompressed ?? undefined}
             />
           )}
         </div>

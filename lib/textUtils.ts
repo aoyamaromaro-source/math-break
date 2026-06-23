@@ -12,6 +12,79 @@ export function encodeImageToBase64(file: File): Promise<string> {
   });
 }
 
+export interface CompressedImage {
+  base64: string;
+  mediaType: string;
+  originalBytes: number;
+  compressedBytes: number;
+}
+
+function formatBytes(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+    : `${Math.round(bytes / 1024)}KB`;
+}
+
+// Resize to at most 800px on the long side and re-encode as JPEG at 60% quality.
+// Falls back to raw base64 when the browser cannot decode the format (e.g. HEIC on desktop).
+export async function compressImage(file: File): Promise<CompressedImage> {
+  const originalMediaType = getMediaType(file);
+  const originalBytes = file.size;
+
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const MAX_SIDE = 800;
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+
+      if (w > MAX_SIDE || h > MAX_SIDE) {
+        if (w >= h) {
+          h = Math.round((h / w) * MAX_SIDE);
+          w = MAX_SIDE;
+        } else {
+          w = Math.round((w / h) * MAX_SIDE);
+          h = MAX_SIDE;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+      const base64 = dataUrl.split(",")[1];
+      const compressedBytes = Math.round(base64.length * 3 / 4);
+
+      console.log(
+        `[compressImage] ${file.name}: ${formatBytes(originalBytes)} → ${formatBytes(compressedBytes)}`
+      );
+
+      resolve({ base64, mediaType: "image/jpeg", originalBytes, compressedBytes });
+    };
+
+    img.onerror = async () => {
+      // Browser cannot decode this format — send raw and let the server handle it
+      URL.revokeObjectURL(url);
+      const raw = await encodeImageToBase64(file);
+      const compressedBytes = Math.round(raw.length * 3 / 4);
+
+      console.log(
+        `[compressImage] ${file.name} (fallback): ${formatBytes(originalBytes)} → ${formatBytes(compressedBytes)}`
+      );
+
+      resolve({ base64: raw, mediaType: originalMediaType, originalBytes, compressedBytes });
+    };
+
+    img.src = url;
+  });
+}
+
 export function getMediaType(file: File): string {
   const type = file.type.toLowerCase();
   if (type === "image/png") return "image/png";
