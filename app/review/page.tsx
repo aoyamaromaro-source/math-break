@@ -10,9 +10,9 @@ export default function ReviewPage() {
   const [mode, setMode] = useState("");
 
   useEffect(() => {
-    const p = sessionStorage.getItem("problemText") ?? "";
-    const s = sessionStorage.getItem("solutionText") ?? "";
-    const m = sessionStorage.getItem("mode") ?? "";
+    const p = localStorage.getItem("problemText") ?? "";
+    const s = localStorage.getItem("solutionText") ?? "";
+    const m = localStorage.getItem("mode") ?? "";
     if (!p) {
       router.push("/");
       return;
@@ -23,9 +23,15 @@ export default function ReviewPage() {
   }, [router]);
 
   const handleConfirm = () => {
-    console.log("[review] saving problemText length:", problemText.length, "solutionText length:", solutionText.length);
-    sessionStorage.setItem("problemText", problemText);
-    sessionStorage.setItem("solutionText", solutionText);
+    localStorage.setItem("problemText", problemText);
+    // solutionText state starts as "" and is set asynchronously by useEffect.
+    // On Vercel static pages the timing can differ from local dev, so fall back
+    // to the value already stored by the home page rather than overwriting with "".
+    const solToSave = solutionText !== ""
+      ? solutionText
+      : (localStorage.getItem("solutionText") ?? "");
+    localStorage.setItem("solutionText", solToSave);
+    console.log("[review] saving problemText length:", problemText.length, "solutionText length:", solToSave.length);
     router.push("/explain");
   };
 

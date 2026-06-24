@@ -75,9 +75,9 @@ export default function Home() {
 
       const { problemText, solutionText } = await res.json();
 
-      sessionStorage.setItem("problemText", problemText);
-      sessionStorage.setItem("solutionText", solutionText);
-      sessionStorage.setItem("mode", mode);
+      localStorage.setItem("problemText", problemText);
+      localStorage.setItem("solutionText", solutionText);
+      localStorage.setItem("mode", mode);
 
       router.push("/review");
     } catch {

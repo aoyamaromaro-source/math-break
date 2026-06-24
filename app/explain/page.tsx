@@ -15,9 +15,9 @@ export default function ExplainPage() {
   const [showExplainBtn, setShowExplainBtn] = useState(false);
 
   useEffect(() => {
-    const p = sessionStorage.getItem("problemText") ?? "";
-    const s = sessionStorage.getItem("solutionText") ?? "";
-    console.log("[explain] loaded from sessionStorage — problemText length:", p.length, "solutionText length:", s.length);
+    const p = localStorage.getItem("problemText") ?? "";
+    const s = localStorage.getItem("solutionText") ?? "";
+    console.log("[explain] loaded from localStorage — problemText length:", p.length, "solutionText length:", s.length);
     if (!p) {
       router.push("/");
       return;
