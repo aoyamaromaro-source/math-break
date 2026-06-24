@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import ImageUploader from "@/components/ImageUploader";
 import { compressImage, CompressedImage } from "@/lib/textUtils";
 import { AppMode } from "@/types";
+import { useOcr } from "@/lib/ocrContext";
 
 export default function Home() {
   const router = useRouter();
+  const { setOcrData } = useOcr();
   const [mode, setMode] = useState<AppMode>("problem-and-solution");
   const [problemFile, setProblemFile] = useState<File | null>(null);
   const [problemCompressed, setProblemCompressed] = useState<CompressedImage | null>(null);
@@ -75,9 +77,7 @@ export default function Home() {
 
       const { problemText, solutionText } = await res.json();
 
-      localStorage.setItem("problemText", problemText);
-      localStorage.setItem("solutionText", solutionText);
-      localStorage.setItem("mode", mode);
+      setOcrData({ problemText, solutionText, mode });
 
       router.push("/review");
     } catch {

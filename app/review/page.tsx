@@ -2,36 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useOcr } from "@/lib/ocrContext";
 
 export default function ReviewPage() {
   const router = useRouter();
+  const { ocrData, updateTexts } = useOcr();
   const [problemText, setProblemText] = useState("");
   const [solutionText, setSolutionText] = useState("");
-  const [mode, setMode] = useState("");
 
   useEffect(() => {
-    const p = localStorage.getItem("problemText") ?? "";
-    const s = localStorage.getItem("solutionText") ?? "";
-    const m = localStorage.getItem("mode") ?? "";
-    if (!p) {
+    if (!ocrData.problemText) {
       router.push("/");
       return;
     }
-    setProblemText(p);
-    setSolutionText(s);
-    setMode(m);
-  }, [router]);
+    setProblemText(ocrData.problemText);
+    setSolutionText(ocrData.solutionText);
+  }, [ocrData, router]);
 
   const handleConfirm = () => {
-    localStorage.setItem("problemText", problemText);
-    // solutionText state starts as "" and is set asynchronously by useEffect.
-    // On Vercel static pages the timing can differ from local dev, so fall back
-    // to the value already stored by the home page rather than overwriting with "".
-    const solToSave = solutionText !== ""
-      ? solutionText
-      : (localStorage.getItem("solutionText") ?? "");
-    localStorage.setItem("solutionText", solToSave);
-    console.log("[review] saving problemText length:", problemText.length, "solutionText length:", solToSave.length);
+    updateTexts(problemText, solutionText);
     router.push("/explain");
   };
 
@@ -67,7 +56,7 @@ export default function ReviewPage() {
             />
           </div>
 
-          {mode === "problem-and-solution" && (
+          {ocrData.mode === "problem-and-solution" && (
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 解説

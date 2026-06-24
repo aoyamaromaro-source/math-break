@@ -4,27 +4,24 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import TextViewer, { HighlightRange } from "@/components/TextViewer";
 import ExplainPanel from "@/components/ExplainPanel";
+import { useOcr } from "@/lib/ocrContext";
 
 export default function ExplainPage() {
   const router = useRouter();
-  const [problemText, setProblemText] = useState("");
-  const [solutionText, setSolutionText] = useState("");
+  const { ocrData } = useOcr();
   const [highlights, setHighlights] = useState<HighlightRange[]>([]);
   const [activeHighlight, setActiveHighlight] = useState("");
   const [pendingText, setPendingText] = useState("");
   const [showExplainBtn, setShowExplainBtn] = useState(false);
 
+  const problemText = ocrData.problemText;
+  const solutionText = ocrData.solutionText;
+
   useEffect(() => {
-    const p = localStorage.getItem("problemText") ?? "";
-    const s = localStorage.getItem("solutionText") ?? "";
-    console.log("[explain] loaded from localStorage — problemText length:", p.length, "solutionText length:", s.length);
-    if (!p) {
+    if (!problemText) {
       router.push("/");
-      return;
     }
-    setProblemText(p);
-    setSolutionText(s);
-  }, [router]);
+  }, [problemText, router]);
 
   const handleHighlight = useCallback((text: string) => {
     setPendingText(text);
