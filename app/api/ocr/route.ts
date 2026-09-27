@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { ipAddress } from "@vercel/functions";
 import { getAnthropicClient, OCR_SYSTEM } from "@/lib/anthropic";
 import { convertHeicToJpeg } from "@/lib/heicUtils";
+import { consumeDailyOcrQuota } from "@/lib/rateLimit";
 
 type SupportedMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
@@ -35,6 +37,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const ip = ipAddress(request) ?? "unknown";
+    const { allowed } = await consumeDailyOcrQuota(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "本日の利用回数上限に達しました。また明日ご利用ください" },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { problemImage, solutionImage, mode } = body;
 
